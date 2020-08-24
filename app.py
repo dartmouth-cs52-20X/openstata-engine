@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, abort
+from do import RunStata
 # import some stats library!!
 
 app = Flask(__name__)
@@ -15,20 +16,20 @@ def run_do_file():
         if request_data != None:    # check that there is data
             
             try:
-                raw_cmds = request_data['input']
-            except: 
-            parsed_cmds = request_data['parsed']
+                do_file = request_data['dofile']
+            except:
+                return jsonify({ 'message': 'error', 'error': 'no .do file in request data'})
 
-            if raw_cmds != None and parsed_cmds != None:
-                return jsonify({ 'message': 'running the do file' })
-                # output = run_do_file(raw_cmds, parsed_cmds)
+            if do_file != None:
+                # return jsonify({ 'message': 'running the do file' })
+                myStata = RunStata()
+                output = myStata.run_do_file(do_file)
+                return jsonify({ 'output': output })
             else:
                 return jsonify({ 'message': 'error', 'error': 'no .do file'})
 
         else: 
             return jsonify({ 'message': 'error', 'error': 'no .do file'})
-
-        # return jsonify({ 'message': 'success'})
     else:
         return jsonify({ 'message': 'error', 'error': 'Must call POST'})
 
