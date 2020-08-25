@@ -50,10 +50,4 @@ python ./test-stata.py > ./output/open-stata.log        # for mac/linux
 
 `testing/test-stata.py` tests the creation of a `stata` object and all methods implemented in `stata.py`
 
-The output can be compared to `real-stata-output.log`, a log file produced on 2020 , by running `testing/comparison/comparison.do`.
-
-To run the tests, you will need to download and save 3 raw datasets to the `testing/data/` directory:
-
-- 
-- 
-- 
+The output can be compared to `real-stata-output.log`, a log file produced on [date] , by running `testing/comparison/comparison.do`.
