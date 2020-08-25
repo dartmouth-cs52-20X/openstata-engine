@@ -1,3 +1,5 @@
+import sys
+
 sys.path.append("./stata-functionality/")
 from stata import Stata
 
@@ -5,7 +7,7 @@ class RunStata:
 
     def __init__(self):
         self.placeholder = 0
-        # self.stata = Stata()
+        self.stata = Stata()
 
     def run_do_file(self, do_file):
 
@@ -34,6 +36,7 @@ class RunStata:
         except:
             return 1, "Error: No command name in parsed command."
 
+        print(cmd)
         if cmd=='clear':
             result = self.stata.clear()
             return result
@@ -58,6 +61,7 @@ class RunStata:
             except:
                 return 1, "Error: Missing arguments in parsed command: summarize"
             result = self.stata.describe(varlist=varlist)
+            print(result)
             return result
         elif cmd=='mean':
             try:
@@ -115,7 +119,7 @@ class RunStata:
                 return 1, "Error: Missing arguments or expression in parsed command: drop"
             result = self.stata.drop(varlist=varlist,ifCondition=ifcon)
             return result
-        elif cmd=='tabulate':
+        # elif cmd=='tabulate':
 
         # elif cmd=='merge':
 

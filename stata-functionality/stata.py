@@ -10,6 +10,7 @@ import econtools.metrics as mt
 from econtools import read
 import urllib.request
 import os
+import io
 import sys
 class Stata:
 
@@ -52,6 +53,7 @@ class Stata:
             try:
                 df = pd.read_stata(fp)
                 self.memory_df = df
+                print(df.head())
             except:
                 return 1, 'Error in command "use": Could not load from data file {}'.format(fp)
             return 0, 'Loaded {}'.format(fp)
@@ -90,7 +92,7 @@ class Stata:
 
     def summarize(self, varlist=None, ifCondition=None):
 
-        if varlist==None:
+        if varlist==None or len(varlist)==0:
             temp = self.memory_df
         else:
             temp = self.subset_by_varlist(varlist, caller="summarize")
@@ -100,14 +102,15 @@ class Stata:
                 temp = temp[1]
 
         try:
-            result = temp.describe()
+            # print(temp.head())
+            result = temp.describe().to_string()
         except: 
             return 1, 'Error in command "summarize": Could not summarize data.'
         return 0, result
 
     def describe(self, varlist=None, ifCondition=None):
 
-        if varlist==None:
+        if varlist==None or len(varlist)==0:
             temp = self.memory_df
         else:
             temp = self.subset_by_varlist(varlist, caller="describe")
@@ -117,9 +120,13 @@ class Stata:
                 temp = temp[1]
 
         try:
-            result = temp.info()
+            buffer = io.StringIO()
+            df.info(buf=buffer)
+            print('here')
+            result = buffer.getvalue()
+            print(result)
         except: 
-            return 1, 'Error in command "summarize": Could not describe data.'
+            return 1, 'Error in command "describe": Could not describe data.'
         return 0, result
 
 
@@ -133,7 +140,7 @@ class Stata:
                 return temp
 
         try:
-            result = temp[1].mean(axis=0, numeric_only=True)
+            result = temp[1].mean(axis=0, numeric_only=True).to_string()
         except: 
             return 1, 'Error in command "mean": Could not calculate mean.'
         return 0, result
@@ -207,7 +214,7 @@ class Stata:
         elif varlist!=None and ifCondition==None:
             # add check if variables are there
             try:
-                self.memory_df  = self.memory_df.drop(varlist, axis=1)
+                self.memory_df  = self.memory_df.drop(columns=varlist)
             except:
                 return 1, 'Error in command "drop": could not drop variables {} from data in memory.'.format(varlist)
             return 0, 'Dropped variables {} from data in memory.'.format(varlist)
@@ -276,9 +283,10 @@ class Stata:
         try:
             results = mt.reg(self.memory_df, y, xs, vce_type=vce_type, cluster=cluster, addcons=True)
             self.results = results
+            output = results.summary.to_string()
         except:
             return 1, 'Error in command "regress": unable to run.'
-        return 0, results
+        return 0, output
 
     def predict(self, newvar, option='resid'):
         if newvar==None:
