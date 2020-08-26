@@ -18,16 +18,23 @@ class RunStata:
 
             try:
                 result_list.append(do_file[i]['input'])         # add raw command text
+                ret = self.stata.handleLog(do_file[i]['input'])
             except:
                 result_list.append('No input for commad {}'.format(i))
                 break
             
             cmd_output = self.run_command(do_file[i])       # run the command
+            # print(cmd_output)
+            ret = self.stata.handleLog(cmd_output[1])
             result_list.append(cmd_output[1])               # add the output
+            if (ret[0] == 1):
+                break
             if (cmd_output[0] == 1):
+                closetry = self.stata.captureLogClose()
                 break                                       # break on error
 
-        return result_list
+        logs = self.stata.allLogs
+        return result_list, logs
 
     def run_command(self, command):
 
@@ -36,16 +43,17 @@ class RunStata:
         except:
             return 1, "Error: No command name in parsed command."
 
-        print(cmd)
+        # print(cmd)
         if cmd=='clear':
             result = self.stata.clear()
             return result
         elif cmd=='use':
             try:
                 fp = command['args'][0]
+                name = command['args'][1]
             except:
-                return 1, "Error: No filepath in parsed command: use"
-            result = self.stata.use(fp, isUrl=True)
+                return 1, "Error: No filepath and/or filename in parsed command: use"
+            result = self.stata.use(fp, name, isUrl=True)
             return result
         elif cmd=='summarize':
             try:
@@ -61,7 +69,7 @@ class RunStata:
             except:
                 return 1, "Error: Missing arguments in parsed command: summarize"
             result = self.stata.describe(varlist=varlist)
-            print(result)
+            # print(result)
             return result
         elif cmd=='mean':
             try:
@@ -73,10 +81,20 @@ class RunStata:
                 return 1, "Error: Empty varlist in parsed command: mean"
             result = self.stata.mean(varlist=varlist,ifCondition=ifcon)
             return result
-        # elif cmd=='log':
-
-        # elif cmd=='capture log close':
-
+        elif cmd=='log':
+            try:
+                type = command['args'][0]
+                if len(command['args'])==2:
+                    fname = command['args'][1]
+                else:
+                    fname = None
+            except:
+                return 1, "Error: Missing arguments in parsed command: log"
+            result = self.stata.log(type=type, fname=fname)
+            return result
+        elif cmd=='capture log close':
+            result = self.stata.captureLogClose()
+            return result
         elif cmd=='generate':
             try:
                 newvar = command['args'][0]
@@ -144,14 +162,3 @@ class RunStata:
         # elif cmd=='summarize'
         else:
             return 1, "Error: Unrecognized command name: {}".format(cmd)
-
-    
-
-
-
-
-
-
-
-
-

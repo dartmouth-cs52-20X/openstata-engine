@@ -17,6 +17,10 @@ class Stata:
     def __init__(self):
         self.memory_df = pd.DataFrame({'No data in memory.' : []})
         self.results = None
+        self.isLogging = False
+        self.allLogs = {}
+        self.currentLogName = None
+        self.currentLog = []
 
         pd.set_option('display.max_columns', 500)
         pd.options.mode.chained_assignment = None
@@ -24,9 +28,17 @@ class Stata:
     # I. Loading and clearing data in memory:
     def clear(self):
         self.memory_df = pd.DataFrame({'No data in memory.' : []})
-        return 0,''
+        return 0,'Cleared data in memory.'
 
-    def use(self, fp, isUrl=False):
+    def handleLog(self, input):
+        try:
+            if self.isLogging:
+                self.currentLog.append(input)
+        except:
+            return 1, 'Error in logging: unable to handle logging of commands.'
+        return 0,'Added to log.'
+
+    def use(self, fp, name, isUrl=False):
         
         if isUrl:
             if '.dta' in fp:
@@ -48,43 +60,45 @@ class Stata:
         
         if ftype==None:
             return 1,'Error in command "use": file type unrecognized.'
+        if name==None:
+            return 1,'Error in command "use": no file name provided.'
 
         if ftype=='.dta':
             try:
                 df = pd.read_stata(fp)
                 self.memory_df = df
-                print(df.head())
+                # print(df.head())
             except:
                 return 1, 'Error in command "use": Could not load from data file {}'.format(fp)
-            return 0, 'Loaded {}'.format(fp)
+            return 0, 'Loaded {}'.format(name)
         elif ftype=='.csv':
             try:
                 df = pd.read_csv(fp)
                 self.memory_df = df
             except:
                 return 1, 'Error in command "use": Could not load from data file {}'.format(fp)
-            return 0, 'Loaded {}'.format(fp)            
+            return 0, 'Loaded {}'.format(name)            
         elif ftype=='.pkl': 
             try:
                 df = pd.read_pickle(fp)
                 self.memory_df = df
             except:
                 return 1, 'Error in command "use": Could not load from data file {}'.format(fp)
-            return 0, 'Loaded {}'.format(fp)            
+            return 0, 'Loaded {}'.format(name)            
         elif ftype=='.hdf':
             try:
                 df = pd.read_hdf(fp)
                 self.memory_df = df
             except:
                 return 1, 'Error in command "use": Could not load from data file {}'.format(fp)
-            return 0, 'Loaded {}'.format(fp)
+            return 0, 'Loaded {}'.format(name)
         elif ftype=='.xlsx' or ftype=='.xls':
             try:
                 df = pd.read_excel(fp)
                 self.memory_df = df
             except:
                 return 1, 'Error in command "use": Could not load from data file {}'.format(fp)
-            return 0, 'Loaded {}'.format(fp)            
+            return 0, 'Loaded {}'.format(name)            
         else:
             return 0, 'Error in command "use": Could not read from file format {}'.format(ftype)
 
@@ -126,14 +140,13 @@ class Stata:
             result = buffer.getvalue()
             print(result)
         except: 
-            return 1, 'Error in command "describe": Could not describe data.'
+            return 1, 'Error in command "describe": could not describe data.'
         return 0, result
-
 
     def mean(self, varlist, ifCondition=None):
 
         if varlist==None:
-            return 1, 'Error in command "mean": Must have varlist (try: mean var_one var_two).'
+            return 1, 'Error in command "mean": must have varlist (try: mean var_one var_two).'
         else:
             temp = self.subset_by_varlist(varlist, caller="mean")
             if temp[0] == 1:
@@ -142,10 +155,53 @@ class Stata:
         try:
             result = temp[1].mean(axis=0, numeric_only=True).to_string()
         except: 
-            return 1, 'Error in command "mean": Could not calculate mean.'
+            return 1, 'Error in command "mean": could not calculate mean.'
         return 0, result
 
-    # def log_using(self, fp)
+    def log(self, type, fname=None):
+        if type=='using':
+            if fname==None:
+                return 1, 'Error in command "log": no filename provided.'
+            elif self.isLogging == True:
+                return 1, 'Error in command "log": must close currently open log {} (try: capture log close) before opening new log.'
+            else:
+                try:
+                    self.isLogging = True
+                    self.currentLogName = fname
+                    self.currentLog = []
+                except:
+                    return 1, 'Error in command "log": unable to create log file with name {}'.format(fname)
+                return 0, 'Log file {} opened.'.format(fname)
+        elif type=='close':
+            if self.isLogging == False:
+                return 1, 'Error in command "log": cannot close when no log file is open.'
+            else:
+                try:
+                    result = self.captureLogClose()
+                except:
+                    return 1, 'Error in command "log": unable to close the currently open log file.'
+                return result
+        else:
+            return 1, 'Error in command "log": invalid argument (try: log using fname OR try: log close)'
+
+    def captureLogClose(self):
+        if self.isLogging==True:
+            try:
+                if len(self.currentLog) > 0:
+                    log = "\n\n".join(self.currentLog)
+                else:
+                    log = " "               
+                self.allLogs[self.currentLogName] = log
+                temp = self.currentLogName
+                self.currentLogName = None
+                self.currentLog = []
+                self.isLogging = False
+            except :
+                return 1, 'Error in command "capture log close" or "log close": unable to close log file.'
+            return 0, 'Close log file {}'.format(temp)
+        else:
+            return 0, 'No log open. Program proceeds.'
+
 
     def subset_by_varlist(self, varlist, caller):
         # cs_varlist = ", ".join(varlist)
