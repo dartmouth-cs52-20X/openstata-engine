@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, abort
-# from flask_cors import CORS
+from flask_cors import CORS
 from do import RunStata
 # import some stats library!!
 
@@ -10,7 +10,7 @@ def hello_world():
     return jsonify({ 'message': 'hi - this is our open-stata api!' })
 
 @app.route('/do', methods=['POST'])
-# @cross_origin(origins='https://open-stata.herokuapp.com/*',methods=['POST'])
+@cross_origin(origins='https://open-stata.herokuapp.com/*',methods=['POST'])
 def run_do_file():
     if request.method == 'POST':    # check that request is POST
         request_data = request.get_json()   # get the json data
