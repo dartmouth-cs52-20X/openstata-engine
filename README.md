@@ -19,6 +19,7 @@ combined with free tutorials and sample datasets to get anyone started with lear
 - Parser generator: Nearley.js
 - Microservice HTTP calls: Axios
 - Database: MongoDB and Mongoose
+- Persistent data file storage: S3
 - Authentication: Passport.js
 
 **Statistics Microservice**
@@ -27,7 +28,12 @@ combined with free tutorials and sample datasets to get anyone started with lear
 
 ## Setup
 
-To get this microservice running, `Flask run`.
+To get this microservice running, first do `pip install -r requirements.txt` to install the necessary packages.
+You can optionally use a virtual environment, but it's not too necessary for this project.
+Next, set an environment variable to tell Flask what Python file to look for by executing the command `export FLASK_APP=app.py`
+in the shell.
+
+After this is done, you can start the microservice locally with just `flask run`.
 
 ## Deployment
 
