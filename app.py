@@ -1,16 +1,19 @@
 from flask import Flask, request, jsonify, abort
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from do import RunStata
 # import some stats library!!
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
-@app.route('/')
+@app.route("/")
+@cross_origin()
 def hello_world():
     return jsonify({ 'message': 'hi - this is our open-stata api!' })
 
-@app.route('/do', methods=['POST'])
-@cross_origin(origins='https://open-stata.herokuapp.com/*',methods=['POST'])
+@app.route("/do", methods=['POST'])
+@cross_origin(origins="https://open-stata.herokuapp.com/*", methods=['POST'])
 def run_do_file():
     if request.method == 'POST':    # check that request is POST
         request_data = request.get_json()   # get the json data
