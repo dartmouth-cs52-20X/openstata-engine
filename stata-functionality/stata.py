@@ -134,11 +134,11 @@ class Stata:
                 temp = temp[1]
 
         try:
-            buffer = io.StringIO()
-            df.info(buf=buffer)
-            print('here')
-            result = buffer.getvalue()
-            print(result)
+            buf = io.StringIO()
+            temp.info(buf=buf)
+            # print('here')
+            result = buf.getvalue()
+            # print(result)
         except: 
             return 1, 'Error in command "describe": could not describe data.'
         return 0, result
@@ -209,7 +209,15 @@ class Stata:
         try:
             temp = self.memory_df[varlist]
         except:
-            return 1, 'Error in command "{}": Variable in varlist not found.'.format(caller)
+            return 1, 'Error in command "{}": variable in varlist not found.'.format(caller)
+        return 0, temp
+
+    def subset_by_ifcondition(self, cond):
+
+        try:
+            temp = self.memory_df.query(cond)
+        except:
+            return 1, 'Error in if-condition {}: unable to evaluate.'.format(cond)
         return 0, temp
 
     # III. Basic data transformation commands:

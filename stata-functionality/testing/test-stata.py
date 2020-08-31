@@ -31,7 +31,7 @@ def main():
     print("----------------------------------------------------------------------------------")
     print("Testing: Use (x2)")
     print("----------------------------------------------------------------------------------")
-    result = stata.use(my_dta, isUrl=True)
+    result = stata.use(my_dta, name="testdata", isUrl=True)
     print("Result:", result[1])
 
     # result = stata.use(url_csv, isUrl=True)
