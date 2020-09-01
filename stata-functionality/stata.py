@@ -106,10 +106,19 @@ class Stata:
 
     def summarize(self, varlist=None, ifCondition=None):
 
-        if varlist==None or len(varlist)==0:
-            temp = self.memory_df
+        if ifCondition!=None:
+            temp_1 = self.subset_by_ifcondition(self.memory_df, ifCondition)
+            if temp_1[0] == 1:
+                return temp_1[1]
+            else:
+                temp = temp_1[1].copy()
         else:
-            temp = self.subset_by_varlist(varlist, caller="summarize")
+            temp = self.memory_df
+
+        # if varlist==None or len(varlist)==0:
+            # temp = self.memory_df
+        if varlist!=None and len(varlist)>0:
+            temp = self.subset_by_varlist(temp, varlist, caller="summarize")
             if temp[0] == 1:
                 return temp
             else:
@@ -124,37 +133,58 @@ class Stata:
 
     def describe(self, varlist=None, ifCondition=None):
 
+        # if ifCondition!=None:
+        #     temp_1 = self.subset_by_ifcondition(self.memory_df, ifCondition)
+        #     if temp_1[0] == 1:
+        #         return temp_1[1]
+        #     else:
+        #         temp = temp_1[1].copy()
+        # else:
+        #     temp = self.memory_df
+
         if varlist==None or len(varlist)==0:
             temp = self.memory_df
         else:
-            temp = self.subset_by_varlist(varlist, caller="describe")
+            temp = self.subset_by_varlist(self.memory_df, varlist, caller="describe")
             if temp[0] == 1:
                 return temp
             else:
                 temp = temp[1]
 
         try:
-            buffer = io.StringIO()
-            df.info(buf=buffer)
-            print('here')
-            result = buffer.getvalue()
-            print(result)
+            buf = io.StringIO()
+            temp.info(buf=buf)
+            # print('here')
+            result = buf.getvalue()
+            # print(result)
         except: 
             return 1, 'Error in command "describe": could not describe data.'
         return 0, result
 
     def mean(self, varlist, ifCondition=None):
 
-        if varlist==None:
+        if ifCondition!=None:
+            temp_1 = self.subset_by_ifcondition(self.memory_df, ifCondition)
+            if temp_1[0] == 1:
+                return temp_1[1]
+            else:
+                temp = temp_1[1].copy()
+        else:
+            temp = self.memory_df
+
+        if varlist==None or len(varlist)==0:
             return 1, 'Error in command "mean": must have varlist (try: mean var_one var_two).'
         else:
-            temp = self.subset_by_varlist(varlist, caller="mean")
+            temp = self.subset_by_varlist(temp, varlist, caller="mean")
             if temp[0] == 1:
                 return temp
 
         try:
-            result = temp[1].mean(axis=0, numeric_only=True).to_string()
-        except: 
+            if len(varlist)==1:
+                result = temp[1].mean(numeric_only=True).to_string()                
+            else:
+                result = temp[1].mean(axis=0, numeric_only=True).to_string()
+        except:
             return 1, 'Error in command "mean": could not calculate mean.'
         return 0, result
 
@@ -202,14 +232,25 @@ class Stata:
         else:
             return 0, 'No log open. Program proceeds.'
 
-
-    def subset_by_varlist(self, varlist, caller):
+    def subset_by_varlist(self, data, varlist, caller):
         # cs_varlist = ", ".join(varlist)
         # add check if the variables are there
         try:
-            temp = self.memory_df[varlist]
+            temp = data[varlist]
         except:
-            return 1, 'Error in command "{}": Variable in varlist not found.'.format(caller)
+            return 1, 'Error in command "{}": variable in varlist not found.'.format(caller)
+        return 0, temp
+
+    def subset_by_ifcondition(self, data, cond):
+
+        try:
+            # print(cond)
+            # print(data)
+            # print(data.head())
+            # print("evaluting")
+            temp = data.query(cond)
+        except:
+            return 1, 'Error in if-condition {}: unable to evaluate.'.format(cond)
         return 0, temp
 
     # III. Basic data transformation commands:
@@ -313,7 +354,7 @@ class Stata:
                     return 1, 'Error in command "tabulate": no variable {} in data in memory.'.format(var_two)
                 try:
                     df = self.memory_df[[var_one, var_two]].copy()
-                    print('here')
+                    # print('here')
                     result = df.count_values()
                     # d = {'Values': result.index, 'Counts': result.values}
                     # print(result.index)
@@ -333,9 +374,7 @@ class Stata:
             return 1, 'Error in command "regress": no y variable (try: regress y x).'
         elif xs==None:
             return 1, 'Error in command "regress": no x variable(s) (try: regress y x).'
-
-        # use set stuff to check all variables are in df
-
+        # use set stuff to check all variables are in df?
         try:
             results = mt.reg(self.memory_df, y, xs, vce_type=vce_type, cluster=cluster, addcons=True)
             self.results = results
@@ -382,10 +421,7 @@ class Stata:
         return 0, result
     
     # def merge():
-
-
     # Advanced commands: ivreg, areg, forval, foreach, testparm
-
     # debugging
     def debug_head(self):
         return self.memory_df.head()
