@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, abort
 from flask_cors import CORS, cross_origin
-from do import RunStata
+from do import RunStata, handleTutorials
 # import some stats library!!
 
 app = Flask(__name__)
@@ -29,6 +29,21 @@ def run_do_file():
                 # return jsonify({ 'message': 'running the do file' })
                 myStata = RunStata()
                 output,logfiles = myStata.run_do_file(do_file)
+
+                try:
+                    tid = request_data['tutorialID']
+                except:
+                    p = 0
+                    
+                if tid!=None:
+                    try:
+                        tutorial_result = handleTutorials(tid, do_file)
+                    except:
+                        output.append('Tutorial ungradeable. Sorry!')
+                    
+                    if tutorial_result[0]==0:
+                        output.append(tutorial_result[1])
+
                 return jsonify({ 'output': output, 'logfiles': logfiles })
             else:
                 return jsonify({ 'message': 'error', 'error': 'no .do file'})

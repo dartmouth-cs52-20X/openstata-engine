@@ -3,6 +3,54 @@ import sys
 sys.path.append("./stata-functionality/")
 from stata import Stata
 
+def handleTutorials(tid, do_f):
+
+    if tid==None or do_f==None:
+        return 1, 'Cannot grade tutorial: no tutorial nubmer or program output'
+    else:
+        try:
+            if tid=='tutorial_01':
+                try:
+                    k = len(do_f)
+                    if do_f[k-1]['command'] == "summarize" and do_f[k-2]['command'] == "describe" and do_f[k-2]['args'] == ["sex"]:
+                        return 0,"Tutorial Passed!"
+                    else:
+                        return 0,"Tutorial failed. Try again!"
+                except:
+                    return 0,"Tutorial failed. Try again!"
+            elif tid=='tutorial_02':
+                k = len(do_f)
+                try:
+                    if do_f[k-1]['command'] == "capture log close" and do_f[k-2]['command'] == "summarize" and do_f[k-3]['command'] == "log" and do_f[k-3]['args'][0] == "using" and do_f[k-3]['args'][1] == "tutorial-two":
+                        return 0,"Tutorial Passed!"
+                    else:
+                        return 0,"Tutorial failed. Try again!"
+                except:
+                    return 0,"Tutorial failed. Try again!"
+            elif tid=='tutorial_03':
+                k = len(do_f)
+                try:
+                    if do_f[k-1]['command'] == "capture log close" and do_f[k-2]['command'] == "regress" and do_f[k-3]['command'] == "generate" and do_f[k-4]['command'] == "log":
+                        if do_f[k-2]['args'][0] == "wage_hr" and ((do_f[k-2]['args'][1][0] == "age" and do_f[k-2]['args'][1][1] == "age2") or (do_f[k-2]['args'][1][0] == "age2" and do_f[k-2]['args'][1][1] == "age")):
+                            if do_f[k-3]['args'][0] == "age2" and (do_f[k-3]['args'][1] == "age**2" or do_f[k-3]['args'][1] == "age*age"):
+                                if do_f[k-4]['args'][0] == "using" and do_f[k-4]['args'][1] == "tutorial-three":
+                                    return 0,"Tutorial Passed!"
+                                else:
+                                    return 0, "Tutorial failed. Incorrect log using command."
+                            else:
+                                return 0, "Tutorial failed. Incorrectly generated age2. Try again!"
+                        else:
+                            return 0, "Tutorial failed. Incorrect regression. Try again!"
+                    else:
+                        return 0,"Tutorial failed. Missing/incorrect command Try again!"
+                except:
+                    return 0,"Tutorial failed. Try again!"
+            else:
+                return 1, 'Unrecognized tutorial!'
+
+        except:
+            return 1, 'Cannot grade tutorial. Sorry!'
+
 class RunStata:
 
     def __init__(self):
