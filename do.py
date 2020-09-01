@@ -91,7 +91,6 @@ class RunStata:
         except:
             return 1, "Error: No command name in parsed command."
 
-        # print(cmd)
         if cmd=='clear':
             result = self.stata.clear()
             return result
@@ -117,7 +116,6 @@ class RunStata:
             except:
                 return 1, "Error: Missing arguments in parsed command: summarize"
             result = self.stata.describe(varlist=varlist)
-            # print(result)
             return result
         elif cmd=='mean':
             try:
@@ -166,7 +164,7 @@ class RunStata:
                 oldname = command['args'][0]
                 newname = command['args'][1]
             except:
-                return 1, "Error: Missing arguments or expression in parsed command: drop"
+                return 1, "Error: Missing arguments or expression in parsed command: rename"
             result = self.stata.rename(oldname=oldname,newname=newname)
             return result
         elif cmd=='drop':
@@ -182,10 +180,21 @@ class RunStata:
                 varlist = command['args']
                 ifcon = command['condition']
             except:
-                return 1, "Error: Missing arguments or expression in parsed command: drop"
-            result = self.stata.drop(varlist=varlist,ifCondition=ifcon)
+                return 1, "Error: Missing arguments or expression in parsed command: keep"
+            result = self.stata.keep(varlist=varlist,ifCondition=ifcon)
             return result
-        # elif cmd=='tabulate':
+        elif cmd=='tabulate':
+            try:
+                var1 = command['args'][0]
+                if len(command['args'])==2:
+                    var2 = command['args'][1]
+                else:
+                    var2 = None
+                ifcon = command['condition']
+            except:
+                return 1, "Error: Missing arguments or expression in parsed command: tabulate"
+            result = self.stata.tabulate(var1, var2, ifCondition=ifcon)
+            return result
 
         # elif cmd=='merge':
 
@@ -195,18 +204,16 @@ class RunStata:
                 xs = command['args'][1]
                 ifcon = command['condition']
             except:
-                return 1, "Error: Missing arguments or expression in parsed command: drop"
+                return 1, "Error: Missing arguments or expression in parsed command: regress"
             result = self.stata.reg(y=y,xs=xs,ifCondition=ifcon)
             return result
         # elif cmd=='predict':
-        # elif cmd=='test':
-        # elif cmd=='summarize'
-        # elif cmd=='summarize'
-        # elif cmd=='summarize'
-        # elif cmd=='summarize'
-        # elif cmd=='summarize'
-        # elif cmd=='summarize'
-        # elif cmd=='summarize'
-        # elif cmd=='summarize'
+        elif cmd=='test':
+            try:
+                varlist = command['args']
+            except:
+                return 1, "Error: Missing arguments or expression in parsed command: test"
+            result = self.stata.test(varlist=varlist)
+            return result
         else:
             return 1, "Error: Unrecognized command name: {}".format(cmd)
