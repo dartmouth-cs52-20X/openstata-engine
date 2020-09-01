@@ -263,12 +263,21 @@ class Stata:
 
         if newvar in self.memory_df.columns:
             return 1, 'Error in command "generate": Variable {} already exists.'.format(newvar)
+        # elif ifCondition == None:
         else:
             try:
                 self.memory_df[newvar] = self.memory_df.eval(expression)
             except:
                 return 1, 'Error in command "generate": could not evaluate expression: {}'.format(expression)
-            return 0, 'Generated new variable: {}'.format(newvar)
+        # else:
+        #     try:
+        #         status, slice = self.subset_by_ifcondition(self.memory_df, ifCondition)
+        #         self.memory_df.loc[slice][newvar] = slice.eval(expression)
+        #         print(self.memory_df.head())
+        #     except:
+        #         return 1, 'Error in command "generate": could not evaluate expression: {}'.format(expression)
+        return 0, 'Generated new variable: {}'.format(newvar)
+
 
     def replace(self, oldvar, expression, ifCondition=None):
 
@@ -282,7 +291,7 @@ class Stata:
                 self.memory_df[oldvar] = self.memory_df.eval(expression)
             except:
                 return 1, 'Error in command "replace": could not evaluate expression: {}'.format(expression)
-            return 0, 'Replaced values for variable: {}'.format(oldvar)            
+            return 0, 'Replaced values for variable: {}'.format(oldvar)
         else:
             return 1, 'Error in command "replace": No variable {} in data in memory.'.format(oldvar)
 
@@ -305,7 +314,7 @@ class Stata:
     def drop(self, varlist=None, ifCondition=None):
 
         if varlist==None and ifCondition==None:
-            return 1, 'Error in command "drop": no arguemnts provided.'
+            return 1, 'Error in command "drop": no arguments provided.'
         elif varlist!=None and ifCondition!=None :
             return 1, 'Error in command "drop": cannot conditionally drop variables.'
         elif varlist!=None and ifCondition==None:
@@ -317,13 +326,25 @@ class Stata:
             return 0, 'Dropped variables {} from data in memory.'.format(varlist)
         else:
             # fill in if condition
+            status, self.memory_df = self.subset_by_ifcondition(self.memory_df, 'not ' + ifCondition)
             return 0, 'Rows that did not match condition {} were dropped.'.format(ifCondition)
 
     def keep(self, varlist=None, ifCondition=None):
         if varlist==None and ifCondition==None:
-            return 1, 'Error in command "drop": no arguemnts provided.'
+            return 1, 'Error in command "keep": no arguments provided.'
         elif varlist!=None and ifCondition!=None :
-            return 1, 'Error in command "drop": cannot conditionally drop variables.'
+            return 1, 'Error in command "keep": cannot conditionally keep variables.'
+        elif varlist!=None and ifCondition==None:
+            # add check if variables are there
+            try:
+                self.memory_df  = self.memory_df[varlist]
+            except:
+                return 1, 'Error in command "keep": could not keep variables {} from data in memory.'.format(varlist)
+            return 0, 'Kept only variables {} from data in memory.'.format(varlist)
+        else:
+            # fill in if condition
+            status, self.memory_df = self.subset_by_ifcondition(self.memory_df, ifCondition)
+            return 0, 'Rows matching condition {} were kept.'.format(ifCondition)
 
     def tabulate(self, var_one, var_two=None, ifCondition=None, gen=None):
 
@@ -363,7 +384,7 @@ class Stata:
                     # result.name = "Value - Count"
                 except:
                     return 1, 'Error in command "tabulate": unable to get value counts for variables {} and {}'.format(var_one, var_two)
-                return 0, result                
+                return 0, result
 
         else:
             return 1, 'Error in command "tabulate": did not generate variable'
@@ -395,15 +416,15 @@ class Stata:
             try:
                 self.memory_df.loc[self.results.sample, newvar] = self.results.resid
             except:
-                return 1, 'Error in command "predict": unable to store regresion residuals'
+                return 1, 'Error in command "predict": unable to store regression residuals'
             return 0, 'Stored regression residuals in variable {}'.format(newvar)
         elif option=='xb':
             try:
                 self.memory_df.loc[self.results.sample, newvar] = self.results.yhat
             except:
                 print(error)
-                return 1, 'Error in command "predict": unable to store regresion predicted values (xb)'
-            return 0, 'Store regression predicted values (xb) in variable {}'.format(newvar)            
+                return 1, 'Error in command "predict": unable to store regression predicted values (xb)'
+            return 0, 'Store regression predicted values (xb) in variable {}'.format(newvar)
         else:
             return 1, 'Error in command "predict": unrecognized option: {}'.format(option)
 
